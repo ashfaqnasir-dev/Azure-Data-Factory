@@ -1,240 +1,315 @@
-```markdown
-# 🚀 Azure Data Factory (ADF) - Complete Hands-On Guide for Beginners
-
-Welcome to the end-to-end practical guide on **Azure Data Factory (ADF)**. In this lab, we build a complete data pipeline that extracts raw CSV data from **Azure Blob Storage** and loads it into an **Azure SQL Database**.
+Samajh gaya! Screenshot mein text plain raw markdown ki tarah dikh raha tha. Yahan poora document **directly beautifully formatted visual Markdown** mein present hai taake headers, tables, callouts, aur badges sab visually chamakte hue nazar aayein aur aap directly copy karke GitHub par `README.md` ke taur par use kar sakein:
 
 ---
 
-## 📌 Table of Contents
-- [Overview & Architecture](#overview--architecture)
-- [Key ADF Terminology](#key-adf-terminology)
-- [Lab Prerequisites](#lab-prerequisites)
-- [Step-by-Step Hands-On Implementation](#step-by-step-hands-on-implementation)
-  - [Step 1: Create Resource Group & Blob Storage](#step-1-create-resource-group--blob-storage)
-  - [Step 2: Create Azure SQL Server & Database](#step-2-create-azure-sql-server--database)
-  - [Step 3: Configure SQL Firewall Rules](#step-3-configure-sql-firewall-rules)
-  - [Step 4: Create Destination Table in SQL](#step-4-create-destination-table-in-sql)
-  - [Step 5: Deploy Azure Data Factory (ADF)](#step-5-deploy-azure-data-factory-adf)
-  - [Step 6: Build Pipeline using Ingest Tool](#step-6-build-pipeline-using-ingest-tool)
-  - [Step 7: Troubleshooting & Updating Pipeline](#step-7-troubleshooting--updating-pipeline)
-  - [Step 8: Handling Daily / Multiple Files](#step-8-handling-daily--multiple-files)
-- [ETL vs ELT Overview](#etl-vs-elt-overview)
-- [Future Scope: Microsoft Fabric](#future-scope-microsoft-fabric)
-- [Resource Cleanup](#resource-cleanup)
+# 🚀 Azure Data Factory (ADF) Masterclass: Zero to Hero Hands-On
+
+> **Level:** Beginner to Intermediate | **Tech Stack:** Azure Data Factory, Blob Storage, Azure SQL Database | **Type:** Hands-On Lab
+
+An end-to-end practical walkthrough on building enterprise data pipelines using **Azure Data Factory (ADF)**. Extract raw transaction data from **Azure Blob Storage**, transform and validate, and ingest directly into an **Azure SQL Database**.
 
 ---
 
-## 🏗️ Overview & Architecture
+## 📌 Quick Navigation
 
-**Azure Data Factory (ADF)** ek fully managed, serverless, cloud-based data integration service hai. Iska main purpose data ko alag-alag sources se collect karna, transform karna, aur destination system men load karna hai.
+* [🏗️ Architectural Blueprint](https://www.google.com/search?q=%23%EF%B8%8F-architectural-blueprint)
+* [🔑 Core ADF Terminology](https://www.google.com/search?q=%23-core-adf-terminology)
+* [🛠️ Lab Prerequisites](https://www.google.com/search?q=%23%EF%B8%8F-lab-prerequisites)
+* [⚡ Step-by-Step Practical Implementation](https://www.google.com/search?q=%23-step-by-step-practical-implementation)
+* [Step 1: Resource Group & Storage Setup](https://www.google.com/search?q=%23step-1-resource-group--storage-setup)
+* [Step 2: Provision Azure SQL Server & DB](https://www.google.com/search?q=%23step-2-provision-azure-sql-server--db)
+* [Step 3: Network Security & Firewall Rules](https://www.google.com/search?q=%23step-3-network-security--firewall-rules)
+* [Step 4: SQL Target Schema Setup](https://www.google.com/search?q=%23step-4-sql-target-schema-setup)
+* [Step 5: Spin Up Azure Data Factory](https://www.google.com/search?q=%23step-5-spin-up-azure-data-factory)
+* [Step 6: Build End-to-End Ingestion Pipeline](https://www.google.com/search?q=%23step-6-build-end-to-end-ingestion-pipeline)
+* [Step 7: Production Debugging & Fixes](https://www.google.com/search?q=%23step-7-production-debugging--fixes)
+* [Step 8: Automating Dynamic & Daily Files](https://www.google.com/search?q=%23step-8-automating-dynamic--daily-files)
 
+
+* [🔄 ETL vs ELT Frameworks](https://www.google.com/search?q=%23-etl-vs-elt-frameworks)
+* [🔮 Future Horizon: Microsoft Fabric](https://www.google.com/search?q=%23-future-horizon-microsoft-fabric)
+* [🧹 Teardown & Resource Cleanup](https://www.google.com/search?q=%23-teardown--resource-cleanup)
+
+---
+
+## 🏗️ Architectural Blueprint
+
+```
+ ┌────────────────────────────────┐
+ │     Source: Azure Blob         │  Format: sales_data.csv (Delimited Raw Data)
+ └──────────────┬─────────────────┘
+                │
+                ▼ [Extract]
+ ┌────────────────────────────────┐
+ │      Azure Data Factory        │  • Linked Services (Auth & Endpoints)
+ │     (Orchestration Engine)     │  • Datasets (Schema Definition)
+ │                                │  • Copy Activity (Compute via AutoResolveIR)
+ └──────────────┬─────────────────┘
+                │
+                ▼ [Load & Transform]
+ ┌────────────────────────────────┐
+ │   Destination: Azure SQL DB    │  Target: dbo.Sales Table
+ └────────────────────────────────┘
 
 ```
 
-+------------------------+          +-------------------------+          +-----------------------+
-|   Source Data Store    |  =====>  |   Azure Data Factory    |  =====>  | Destination Data Store|
-|   (Azure Blob Storage) |          |  (Pipeline Execution)   |          |  (Azure SQL Database) |
-+------------------------+          +-------------------------+          +-----------------------+
-
-```
-
 ---
 
-## 🔑 Key ADF Terminology
+## 🔑 Core ADF Terminology
 
-| Component | Description |
-| :--- | :--- |
-| **Linked Service** | External services (Blob Storage, SQL DB) ke sath connection establish karne wali configuration. |
-| **Dataset** | Asal data ka structural representation (e.g., CSV file path ya SQL table ka reference). |
-| **Activity** | Pipeline ke andar execute hone wala specific task (e.g., Copy Data, Stored Procedure). |
-| **Pipeline** | Activities ka logical grouping jo ek specific workflow run karti hai. |
-| **Integration Runtime (IR)** | Compute infrastructure jahan ADF pipelines physical taur par run hoti hain. |
-| **Trigger** | Pipeline ko schedule (e.g., daily basis) ya event-driven trigger karne wala engine. |
+| Component | Architecture Role | Practical Context |
+| --- | --- | --- |
+| **Linked Service** | Connection Manager | Holds connection strings, tokens, credentials for external services (Blob, SQL). |
+| **Dataset** | Data Schema & Pointer | Points specifically to `sales_data.csv` inside container or `dbo.Sales` inside SQL DB. |
+| **Activity** | Atomic Execution Unit | The actual task executed (e.g., `CopyData`, `Lookup`, `Execute Pipeline`). |
+| **Pipeline** | Workflow Orchestrator | A logical container orchestrating multiple interconnected activities sequentially or in parallel. |
+| **Integration Runtime (IR)** | Compute Engine | The underlying compute infrastructure executing the copy activities and data flows. |
+| **Trigger** | Automation Schedule | Schedules pipelines via wall-clock schedules, tumbling windows, or storage events. |
 
 ---
 
 ## 🛠️ Lab Prerequisites
 
-1. Active **Microsoft Azure Subscription**.
-2. Sample sales data file: `sales_data.csv`.
-   * Sample schema: `SaleID, SaleDate, CustomerName, Amount`
+* Active **Microsoft Azure Subscription** (Free Tier / Pay-As-You-Go).
+* Sample CSV dataset: `sales_data.csv`
 
----
-
-## 📝 Step-by-Step Hands-On Implementation
-
-### Step 1: Create Resource Group & Blob Storage
-1. Azure Portal men search karein **Resource Groups** aur naya group create karein:
-   * **Name:** `rg-adf-demo`
-   * **Region:** Apni preferred location choose karein (e.g., `East Asia`).
-2. Search karein **Storage Accounts** aur naya account deploy karein:
-   * **Storage Account Name:** `adfdemostorage0926`
-   * **Primary Service:** Azure Blob Storage / Data Lake Storage Gen2.
-3. Deployment ke baad resource open karein, left menu men **Containers** par jayein:
-   * Click **+ Container**.
-   * **Name:** `sales-data`
-   * Container open karein aur apni sample file `sales_data.csv` upload kar dein.
-
----
-
-### Step 2: Create Azure SQL Server & Database
-1. Azure Portal men search karein **Azure SQL**.
-2. Click **Create** aur select karein **SQL Database**:
-   * **Database Name:** `adf-demo-db`
-   * **Resource Group:** `rg-adf-demo`
-3. Click **Create New Server**:
-   * **Server Name:** `adf-demo-server`
-   * **Location:** `East Asia`
-   * **Authentication Method:** SQL and Microsoft Entra authentication.
-   * **Server Admin Login:** Apni pasand ka user name rakhein (e.g., `sqladmin`).
-   * **Password:** Strong password set karein aur ise yaad rakhein.
-4. Review & Create par click karke database deploy hone dein.
-
----
-
-### Step 3: Configure SQL Firewall Rules
-1. Deployed SQL Server open karein aur **Security** section men **Firewall & virtual networks** ya **Networking** par jayein.
-2. Check karein: **"Allow Azure services and resources to access this server"** = `Yes`.
-3. Click **Add your client IPv4 address** taake aap apne browser se login kar sakein.
-4. Click **Save**.
-
----
-
-### Step 4: Create Destination Table in SQL
-1. Azure SQL Database open karein aur left menu se **Query Editor (preview)** open karein.
-2. SQL authentication ke zariye credentials daal kar login karein.
-3. Destination table create karne ke liye query execute karein:
-
-```sql
-CREATE TABLE Sales (
-    SaleID INT PRIMARY KEY,
-    SaleDate DATE,
-    CustomerName VARCHAR(100),
-    Amount DECIMAL(10, 2)
-);
+```csv
+SaleID,SaleDate,CustomerName,Amount
+1001,2026-09-01,Ali Khan,1250.50
+1002,2026-09-01,Zainab Fatima,890.00
+1003,2026-09-02,Hamza Tariq,450.75
+1004,2026-09-03,Ayesha Noor,3200.00
+1005,2026-09-03,Bilal Ahmed,150.25
 
 ```
 
-4. Verify karein ke left panel men `Tables` ke andar `Sales` table show ho rahi hai.
+---
+
+## ⚡ Step-by-Step Practical Implementation
+
+### Step 1: Resource Group & Storage Setup
+
+1. Azure Portal par search karein **Resource Groups** aur create karein:
+* **Name:** `rg-adf-demo`
+* **Region:** `East Asia` (ya nearest low-latency region)
+
+
+2. Search karein **Storage Accounts** aur deploy karein:
+* **Storage Account Name:** `adfdemostorage0926` (globally unique)
+* **Performance:** Standard | **Redundancy:** LRS
+
+
+3. Deploy hone ke baad left panel se **Data storage > Containers** open karein:
+* Click **+ Container** ➔ Name: `sales-data` ➔ Public access level: `Private`.
+* Open `sales-data` container aur upload karein `sales_data.csv`.
+
+
 
 ---
 
-### Step 5: Deploy Azure Data Factory (ADF)
+### Step 2: Provision Azure SQL Server & DB
 
-1. Portal search bar men search karein **Data Factories** (Version 2).
-2. Click **Create**:
+1. Portal search bar mein navigate karein **Azure SQL** ➔ Click **Create** ➔ Choose **SQL Database**.
+* **Database Name:** `adf-demo-db`
+* **Resource Group:** `rg-adf-demo`
+
+
+2. **Server Configuration:** Click *Create New*:
+* **Server Name:** `adf-demo-server-0926`
+* **Location:** `East Asia`
+* **Authentication:** SQL & Microsoft Entra Authentication
+* **Admin Login:** `sqladmin`
+* **Password:** `P@ssw0rd2026#Secure` *(apna strong password set karein)*
+
+
+3. **Compute + Storage:** Dev/Test workload ke liye Basic ya General Purpose tier select karein.
+4. Click **Review + Create** aur deployment complete hone dein.
+
+---
+
+### Step 3: Network Security & Firewall Rules
+
+1. Deployed SQL Server overview page par jayein ➔ Navigate to **Security > Networking**.
+2. **Exceptions:** Set **"Allow Azure services and resources to access this server"** to `Enabled` (Mandatory for ADF connectivity).
+3. **Firewall Rules:** Click **Add your client IPv4 address** taake aapka local browser Query Editor ko block na kare.
+4. Click **Apply / Save**.
+
+---
+
+### Step 4: SQL Target Schema Setup
+
+1. `adf-demo-db` open karein aur left menu se **Query Editor (preview)** par click karein.
+2. Login karein using **SQL Server Authentication** credentials.
+3. Target schema execute karein:
+
+```sql
+-- Target DDL Schema for Sales Ingestion
+IF OBJECT_ID('dbo.Sales', 'U') IS NOT NULL
+    DROP TABLE dbo.Sales;
+
+CREATE TABLE dbo.Sales (
+    SaleID INT NOT NULL PRIMARY KEY,
+    SaleDate DATE NOT NULL,
+    CustomerName NVARCHAR(100) NOT NULL,
+    Amount DECIMAL(10, 2) NOT NULL,
+    IngestedAt DATETIME2 DEFAULT SYSUTCDATETIME()
+);
+
+-- Validate schema creation
+SELECT * FROM sys.tables WHERE name = 'Sales';
+
+```
+
+---
+
+### Step 5: Spin Up Azure Data Factory
+
+1. Search karein **Data Factories** (Version 2) ➔ Click **Create**:
 * **Name:** `adf-demo-factory-0926`
 * **Resource Group:** `rg-adf-demo`
 * **Version:** `V2`
 
 
-3. Git configuration ko abhi ke liye select karein: **Configure Git later**.
-4. Click **Review + Create**, then **Create**.
-5. Resource complete hone ke baad **Launch Studio** par click karein.
+2. **Git Configuration:** Select *Configure Git later*.
+3. Review & Create par click karein.
+4. Factory ready hone par click karein **Launch Studio**.
 
 ---
 
-### Step 6: Build Pipeline using Ingest Tool
+### Step 6: Build End-to-End Ingestion Pipeline
 
-1. ADF Studio home screen par click karein **Ingest** (Copy data tool).
-2. Select **Built-in copy task** aur task cadence men select karein **Run once now**. Click **Next**.
-3. **Configure Source:**
-* **Source Type:** Azure Blob Storage.
-* **Connection:** Click **New Connection**, apna storage account `adfdemostorage0926` select karein aur create karein.
-* **File Path:** Browse karke `sales-data/sales_data.csv` select karein.
-* ADF auto-detect karega ke file delimited text hai aur **First row as header** automatically check karega.
+1. ADF Studio home screen par click karein **Ingest** (Copy data assistant).
+2. **Properties:**
+* Task type: **Built-in copy task**
+* Task cadence: **Run once now**
 
 
-4. **Configure Destination (Sink):**
-* **Destination Type:** Azure SQL Database.
-* **Connection:** Click **New Connection**, apna SQL Server aur Database choose karein.
-* Credentials fill karein. (Agar test connection fail ho, toh SQL Server firewall men ADF IP allow karein).
+3. **Source Store:**
+* Source Type: **Azure Blob Storage**
+* Connection: Click *New Connection* ➔ Select subscription ➔ Pick `adfdemostorage0926` ➔ Click *Create*.
+* File Path: Browse karke `sales-data` ➔ `sales_data.csv` pick karein.
+* Auto-detection check karein: Format = DelimitedText, Column delimiter = Comma (`,`), First row as header = Checked.
 
 
-5. Task name specify karein: `CopyBlobToSql`.
-6. Review Summary and click **Next** to deploy aur execute the pipeline.
+4. **Destination Store (Sink):**
+* Destination Type: **Azure SQL Database**
+* Connection: Click *New Connection* ➔ Pick `adf-demo-server` & `adf-demo-db` ➔ Enter `sqladmin` credentials.
+
+
+5. Task Name: `CopyBlobToSql` ➔ Review summary ➔ Click **Next** to deploy & execute.
 
 ---
 
-### Step 7: Troubleshooting & Updating Pipeline
+### Step 7: Production Debugging & Fixes
 
-Agar pipeline execute ho jaye lekin SQL table empty rahe:
+Agar pipeline execute ho jaye lekin target table empty ho:
 
-1. Left menu men **Monitor** icon par click karein aur pipeline runs check karein.
-2. Agar status **Failed** ho, error trace check karein (Maslan: missing parameter `tableName`).
-3. Fix karne ke liye:
-* Left menu men **Author** par jayein aur pipeline open karein.
-* Sink / Destination Dataset settings men jayein.
-* **Table Name** drop-down se `Sales` table select karein.
-* Up top par click karein **Publish all** taake changes save ho jayein.
+```
+[Issue Encountered]
+Status: Failed
+Error Details: Missing target table parameter binding / table does not exist.
+
+```
+
+#### Diagnostic & Fix Workflow:
+
+1. Left navigation panel se **Monitor** tab open karein ➔ Inspect pipeline run error tree.
+2. Left navigation panel se **Author** tab open karein ➔ Open pipeline `CopyBlobToSql`.
+3. Select **Copy Activity** ➔ Go to the **Sink** tab:
+* **Sink Dataset:** Select `AzureSqlTable`.
+* **Table Name:** Dropdown se explicitly `dbo.Sales` select karein.
+* **Mapping Tab:** Verify karein ke CSV columns SQL columns ke sath 1:1 mapped hain.
 
 
-4. Wapis **Monitor** men jayein aur pipeline ko **Re-run** karein.
-5. SQL Database Query Editor men ja kar verify karein:
+4. Top navigation menu par click karein **Publish all** (save changes to ADF metadata).
+5. Navigate back to **Monitor** ➔ Click **Re-run**.
+6. Verify inside SQL Query Editor:
 
 ```sql
-SELECT * FROM Sales;
+SELECT 
+    COUNT(*) AS TotalRecords,
+    SUM(Amount) AS TotalRevenue,
+    MIN(SaleDate) AS EarliestSale,
+    MAX(SaleDate) AS LatestSale
+FROM dbo.Sales;
+
+SELECT TOP 10 * FROM dbo.Sales ORDER BY SaleID ASC;
 
 ```
 
-Data successfully show ho jayega!
+---
+
+### Step 8: Automating Dynamic & Daily Files
+
+Real-world scenarios mein daily files process karne ke do patterns hain:
+
+#### Pattern A: Wildcard Ingestion
+
+Agar daily multiple batches aate hain:
+
+* Source Dataset setting mein **File path type** ko **Wildcard file path** set karein:
+* Container: `sales-data`
+* Wildcard file name: `sales_*.csv`
+
+
+
+#### Pattern B: Event-Driven / Schedule Triggers
+
+* ADF Studio mein **Trigger > New/Edit** select karein.
+* **Type:** *Schedule* (e.g., Har raat 02:00 AM UTC) ya *Storage events* (jaise hi Blob container mein nayi file upload ho, pipeline trigger ho jaye).
 
 ---
 
-### Step 8: Handling Daily / Multiple Files
+## 🔄 ETL vs ELT Frameworks
 
-Agar daily basis par new files aati hain (e.g., `sales_data_2.csv`):
+```
+========================================================================
+ETL: Extract ➔ Transform ➔ Load (Traditional Data Warehousing)
+========================================================================
+[Raw Blob Storage]
+       │
+       ▼ (Extract)
+[In-Memory ADF / Spark Cluster] ───► Transformations (Cleansing / Regex)
+       │
+       ▼ (Load Cleaned Data)
+[Azure SQL DB / Data Warehouse]
 
-* **Source Dataset Update:** File path men specific file browse karke change karein.
-* **Wildcard Path:** Agar folder ki sari files automatically process karni hon, toh wildcard path use kar sakte hain:
-```text
-Container: sales-data
-Wildcard file name: *.csv
+========================================================================
+ELT: Extract ➔ Load ➔ Transform (Modern Cloud Lakehouse)
+========================================================================
+[Raw Blob Storage]
+       │
+       ▼ (Fast Direct Load via PolyBase / Bulk Copy)
+[Azure SQL / Synapse / Snowflake]
+       │
+       ▼ (Transform in-engine via SQL Views / Stored Procedures / dbt)
+[Production Star Schema / Reporting Marts]
 
 ```
 
+---
 
-* **Schedule Trigger:** ADF men Trigger add karke pipeline ko rozana ke kisi specific time par automate kiya ja sakta hai.
+## 🔮 Future Horizon: Microsoft Fabric
+
+* Microsoft ne ADF ki cloud-scale ETL capabilities ko **Microsoft Fabric** ke **Data Factory** component mein absorb kar liya hai.
+* Agar aap modern data engineering start kar rahe hain, toh foundational concepts (**Pipelines, Activities, Connections, Triggers**) ADF aur Fabric dono mein bilkul same hain.
 
 ---
 
-## 🔄 ETL vs ELT Overview
+## 🧹 Teardown & Resource Cleanup
 
-Azure Data Factory dono architectural design patterns ko support karta hai:
+To avoid unintended compute and storage billing:
 
-```text
-ETL (Extract -> Transform -> Load):
-[Source Data] ---> [In-Memory / Staging Transformation] ---> [Target Database]
-
-ELT (Extract -> Load -> Transform):
-[Source Data] ---> [Direct Load into Target] ---> [Database Compute Transformation]
+```bash
+# Azure CLI cleanup command
+az group delete --name rg-adf-demo --yes --no-wait
 
 ```
 
-* **ETL:** Data pehle intermediate layer men clean aur format hota hai, phir target men jata hai.
-* **ELT:** Modern cloud warehouses ke liye best approach, jahan raw data seedha destination men load hota hai aur SQL compute ke zariye transform hota hai.
+Ya phir Azure Portal par:
+
+1. Open **Resource Groups**.
+2. Select `rg-adf-demo`.
+3. Click **Delete resource group** ➔ Type group name to confirm ➔ Click **Delete**.
 
 ---
-
-## 💡 Future Scope: Microsoft Fabric
-
-Microsoft ne ADF ki next-generation capabilities ko **Microsoft Fabric** ke andar integrate kar diya hai (**Fabric Data Factory**). Core engineering concepts (Pipelines, Activities, Connections) bilkul identical rehte hain, is liye ADF seekhna modern cloud data engineering ke liye solid foundation hai.
-
----
-
-## 🧹 Resource Cleanup
-
-Charges aur billing se bachne ke liye lab complete hone ke baad resource group delete karna na bhoolein:
-
-1. Azure Portal men jayein **Resource Groups**.
-2. Select karein `rg-adf-demo`.
-3. Click **Delete resource group**, group name type karke confirm karein.
-
----
-
-⭐ **Tip:** Is repo ko star aur fork kar lein taake future data engineering pipelines banate waqt quick reference ke taur par use kar sakein!
-
-```
-
-```
-
